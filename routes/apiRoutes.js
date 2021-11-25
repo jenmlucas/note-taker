@@ -1,29 +1,53 @@
 const express = require("express");
 const router = express.Router();
-let noteContent  = require("../develop/db/db.json");
-const {createNewNotes} = require("../lib/notes");
+const { generateNewNotes } = require("../lib/notes");
+const fs = require("fs");
 
 router.get("/notes", (req, res) => {
-    res.json(noteContent);
+    fs.readFile("./db/db.json", (error, notes) => {
+        if (error) {
+            return res.json(error)
+        }
+        notes = JSON.parse(notes)
+        res.json(notes)
+    });
 });
 
 router.post("/notes", (req, res) => {
-    req.body.id = noteContent.length.toString();
+    fs.readFile("./db/db.json", (error, notes) => {
+        if (error) {
+            return res.json(error)
+        }
+        notes = JSON.parse(notes)
+       
 
-    if(!validateNote(req.body)) {
-        res.status(400).send("The note is missing information");
-
-    } else {
-    const newNotes = createNewNotes(req.body, noteContent)
-    res.json(newNotes)
-    }
-});
-
-router.delete("/notes", (req, res) => {
-  
+        req.body.id = notes.length.toString();
     
+        const newNotes = generateNewNotes(req.body, notes)
+        res.json(newNotes)
+    });
 });
 
+router.delete("/notes/:id", (req, res) => {
+    const noteId = req.params.id
+    console.log(noteId)
+
+    fs.readFile("./db/db.json", (error, notes) => {
+        if (error) {
+            return console.log(error)
+        }
+        notes = JSON.parse(notes)
+
+        notes = notes.filter(val => val.id !== noteId)
+
+        fs.writeFile("./db/db.json", JSON.stringify(notes), (error, data) => {
+            if (error) {
+                return error
+            }
+            res.json(notes)
+        })
+    })
+});
 
 module.exports = router;
-// gets and posts and delete 
+// gets and posts and delete
